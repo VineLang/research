@@ -1,0 +1,8 @@
+[package]
+name = "util"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nohash-hasher = "0.2.0"
+vine-util = { git = "https://github.com/VineLang/vine", rev = "484c87fd852ad920308e41915eb0d7f355285b9d" }
