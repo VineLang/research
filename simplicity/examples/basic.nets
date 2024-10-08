@@ -1,0 +1,9 @@
+
+agent Conj(*, *, *)
+agent Disj(*, {*, *})
+
+net foo(r) {
+  Disj(r, a, b)
+  Disj(a, x, y)
+  Conj(b, x, y)
+}

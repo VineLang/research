@@ -1,0 +1,49 @@
+
+agent Zero(*)
+agent Succ(*, *)
+
+agent Add(*, *, *)
+agent Mul(*, *, *)
+
+agent Clone(*, {*, *})
+agent Erase(*)
+
+rule Zero(_) Erase(_) {}
+
+rule Succ(_, pred) Erase(_) {
+  Erase(pred)
+}
+
+rule Zero(_) Clone(_, a, b) {
+  Zero(a)
+  Zero(b)
+}
+
+rule Succ(_, pred) Clone(_, a, b) {
+  Succ(a, p)
+  Succ(b, q)
+  Clone(pred, p, q)
+}
+
+rule Zero(_) Add(_, x, x) {}
+
+rule Succ(_, n) Add(_, m, out) {
+  Succ(out, o)
+  Add(n, m, o)
+}
+
+rule Zero(_) Mul(_, n, o) {
+  Zero(o)
+  Erase(n)
+}
+
+rule Succ(_, n) Mul(_, m, out) {
+  Clone(m, m1, m2)
+  Mul(n, m1, x)
+  Add(m2, x, out)
+}
+
+net square(i, o) {
+  Clone(i, i1, i2)
+  Mul(i1, i2, o)
+}

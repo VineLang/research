@@ -1,24 +1,32 @@
-mod arrow;
-mod diagram;
+pub mod arrow;
+pub mod ast;
+pub mod diagram;
+pub mod lexer;
+pub mod parser;
+pub mod scope;
 
 use diagram::Diagram;
+use parser::SimplicityParser;
 
 fn main() {
+  let src = include_str!("../examples/nat.nets");
+  let system = SimplicityParser::parse(src).unwrap();
+
   let mut diagram = Diagram::default();
 
-  let r = diagram.conjunction();
-  let a = diagram.conjunction();
-  let b = diagram.disjunction();
+  let net = &system.nets[0];
 
-  diagram.link(r.1, a.0);
-  diagram.link(r.2, b.0);
-  diagram.link(a.1, b.1);
-  diagram.link(a.2, b.2);
+  diagram.insert_free_ports(net.ports.iter().flatten().copied(), net.ports.iter().map(|x| x.len()));
 
-  let completion = diagram.complete();
-  dbg!(&completion);
-  assert!(completion.is_complete());
+  for node in &net.nodes {
+    let agent = &system.agents.defs[node.agent].value;
+    diagram.insert_agent(node.ports.iter().copied(), agent.auxiliary.iter().map(|x| x.len()));
+  }
 
-  let consistent = !completion.is_contradictory();
+  while !diagram.is_complete() {
+    diagram = diagram.complete()
+  }
+
+  let consistent = !diagram.is_contradictory();
   dbg!(consistent);
 }
