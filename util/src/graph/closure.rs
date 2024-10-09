@@ -1,51 +1,63 @@
-use std::mem::take;
-
-use crate::{
-  bicycle::{Bicycle, BicycleState},
-  idx::Idx,
+use std::{
+  collections::{hash_map::Entry, HashSet},
+  mem::take,
 };
+
+use crate::idx::Idx;
 
 use super::{Edge, Graph};
 
 impl<I: Idx, E: Edge> Graph<I, E> {
-  pub fn closure(&self, f: impl Fn(I, E, I, E, I) -> Option<E>) -> Graph<I, E> {
-    let mut closure = Closure { input: self, output: self.clone(), f };
-    closure.visit_all(self.nodes.keys());
-    closure.output
+  pub fn closure(&mut self, f: impl Fn(I, E, I, E, I) -> Option<E>) {
+    let todo = self
+      .nodes
+      .iter()
+      .flat_map(|(a, n)| n.edges.keys().filter(move |&&b| b > a).map(move |&b| (a, b)))
+      .collect();
+    let mut closure = Closure { graph: self, todo, f };
+    while let Some(&(a, b)) = closure.todo.iter().next() {
+      closure.todo.remove(&(a, b));
+      closure.process_edge(a, b);
+    }
   }
 }
 
 struct Closure<'a, I: Idx, E: Edge, F> {
-  input: &'a Graph<I, E>,
-  output: Graph<I, E>,
+  graph: &'a mut Graph<I, E>,
+  todo: HashSet<(I, I)>,
   f: F,
 }
 
-impl<I: Idx, E: Edge, F: Fn(I, E, I, E, I) -> Option<E>> Bicycle for Closure<'_, I, E, F> {
-  type Node = I;
-
-  fn state(&mut self, node: Self::Node) -> &BicycleState {
-    self.output.bicycle_state(node)
+impl<'a, I: Idx, E: Edge, F: Fn(I, E, I, E, I) -> Option<E>> Closure<'a, I, E, F> {
+  fn process_edge(&mut self, a: I, b: I) {
+    self.half_process_edge(a, b);
+    self.half_process_edge(b, a);
   }
 
-  fn visit(&mut self, a: Self::Node, mut recurse: impl FnMut(&mut Self, Self::Node)) {
-    let node = &self.input.nodes[a];
+  fn half_process_edge(&mut self, a: I, b: I) {
+    let Some(ab) = self.graph.get_edge(a, b) else { return };
 
-    for &b in node.edges.keys() {
-      recurse(self, b);
-    }
-
-    for (&b, &ab) in node.edges.iter() {
-      let b_edges = take(&mut self.output.nodes[b].edges);
-      for (&c, &bc) in &b_edges {
-        if a == c {
-          continue;
+    let edges = take(&mut self.graph.nodes[b].edges);
+    for (&c, &bc) in &edges {
+      let Some(mut ac) = (self.f)(a, ab, b, bc, c) else { continue };
+      match self.graph.nodes[a].edges.entry(c) {
+        Entry::Occupied(mut e) => {
+          let e = e.get_mut();
+          ac = e.merge(ac);
+          if *e == ac {
+            continue;
+          }
+          *e = ac;
         }
-        if let Some(ac) = (self.f)(a, ab, b, bc, c) {
-          self.output.insert(a, c, ac);
+        Entry::Vacant(e) => {
+          e.insert(ac);
         }
       }
-      self.output.nodes[b].edges = b_edges;
+      if let Some(ca) = ac.converse() {
+        self.graph.half_insert(c, a, ca);
+      }
+      self.todo.insert(if a < c { (a, c) } else { (c, a) });
     }
+    self.graph.nodes[b].edges = edges;
   }
 }

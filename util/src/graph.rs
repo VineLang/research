@@ -1,9 +1,8 @@
-use nohash_hasher::IntMap;
 use std::fmt::Debug;
 
 use crate::{
   bicycle::BicycleState,
-  idx::{Idx, IndexVec},
+  idx::{Idx, IndexVec, IntMap},
 };
 
 mod closure;
@@ -19,7 +18,7 @@ pub struct Node<I: Idx, E: Edge> {
   state: BicycleState,
 }
 
-pub trait Edge: Copy + Debug {
+pub trait Edge: Eq + Copy + Debug {
   fn converse(self) -> Option<Self>;
   fn merge(self, other: Self) -> Self;
 }

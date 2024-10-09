@@ -73,12 +73,8 @@ impl Diagram {
     }
   }
 
-  pub fn complete(&self) -> Self {
-    Self {
-      vars: Default::default(),
-      nodes: self.nodes.clone(),
-      graph: self.graph.closure(|_, x, _, y, _| Arrow::join(x, y)),
-    }
+  pub fn complete(&mut self) {
+    self.graph.closure(|a, x, _, y, c| if a != c { Arrow::join(x, y) } else { None });
   }
 
   pub fn link(&mut self, a: NodeId, b: NodeId) {

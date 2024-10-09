@@ -23,9 +23,8 @@ fn main() {
     diagram.insert_agent(node.ports.iter().copied(), agent.auxiliary.iter().map(|x| x.len()));
   }
 
-  while !diagram.is_complete() {
-    diagram = diagram.complete()
-  }
+  diagram.complete();
+  assert!(diagram.is_complete());
 
   let consistent = !diagram.is_contradictory();
   dbg!(consistent);
