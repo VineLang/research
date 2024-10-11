@@ -35,11 +35,15 @@ impl Diagram {
   ) {
     let mut vars = vars.into_iter();
     for n in partition {
-      let x = self.nodes.push(NodeType::Principal);
-      for v in (&mut vars).take(n) {
-        self.link_var(v, x);
+      let x = self.nodes.push(NodeType::Partition);
+      for _ in 0..n {
+        let v = vars.next().unwrap();
+        let p = self.nodes.push(NodeType::Principal);
+        self.graph.insert(x, p, Arrow(0b00001));
+        self.link_var(v, p);
       }
     }
+    assert!(vars.next().is_none());
   }
 
   pub fn insert_agent(
@@ -53,12 +57,14 @@ impl Diagram {
     for n in partition {
       let partition = self.nodes.push(NodeType::Partition);
       self.graph.insert(principal, partition, Arrow(0b00001));
-      for v in (&mut vars).take(n) {
+      for _ in 0..n {
+        let v = vars.next().unwrap();
         let aux = self.nodes.push(NodeType::Auxiliary);
         self.graph.insert(partition, aux, Arrow(0b00011));
         self.link_var(v, aux);
       }
     }
+    assert!(vars.next().is_none());
   }
 
   fn link_var(&mut self, var: Var, node: NodeId) {
@@ -78,17 +84,13 @@ impl Diagram {
   }
 
   pub fn link(&mut self, a: NodeId, b: NodeId) {
-    self.graph.insert(
-      a,
-      b,
-      match (self.nodes[a], self.nodes[b]) {
-        (NodeType::Principal, NodeType::Principal) => Arrow(0b00100),
-        (NodeType::Principal, NodeType::Auxiliary) => Arrow(0b11000),
-        (NodeType::Auxiliary, NodeType::Principal) => Arrow(0b00011),
-        (NodeType::Auxiliary, NodeType::Auxiliary) => Arrow(0b00011),
-        (NodeType::Partition, _) | (_, NodeType::Partition) => unreachable!(),
-      },
-    );
+    let x = self.nodes.push(NodeType::Partition);
+    let y = self.nodes.push(NodeType::Partition);
+    let z = self.nodes.push(NodeType::Partition);
+    self.graph.insert(x, y, Arrow(0b00001));
+    self.graph.insert(x, z, Arrow(0b00001));
+    self.graph.insert(y, a, Arrow(0b00011));
+    self.graph.insert(z, b, Arrow(0b00011));
   }
 
   pub fn is_contradictory(&self) -> bool {

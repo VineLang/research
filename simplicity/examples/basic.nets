@@ -2,8 +2,26 @@
 agent Conj(*, *, *)
 agent Disj(*, {*, *})
 
-net foo(r) {
+net disj_disj_conj(r) {
   Disj(r, a, b)
   Disj(a, x, y)
   Conj(b, x, y)
+}
+
+net disj_disj_disj(r) {
+  Disj(r, a, b)
+  Disj(a, x, y)
+  Disj(b, x, y)
+}
+
+net disj_conj_conj(r) {
+  Disj(r, a, b)
+  Conj(a, x, y)
+  Conj(b, x, y)
+}
+
+net conj_disj_disj(r) {
+  Conj(r, a, b)
+  Disj(a, x, y)
+  Disj(b, x, y)
 }

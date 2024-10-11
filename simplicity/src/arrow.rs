@@ -11,6 +11,9 @@ impl Arrow {
   }
 
   pub fn join(self, other: Self) -> Option<Self> {
+    if self.0 == 0 || other.0 == 0 {
+      return None;
+    }
     let table = [
       (0b00001, 0b00001, 0b00000),
       (0b00010, 0b00001, 0b00011),
@@ -71,5 +74,24 @@ impl Debug for Arrow {
       if self.0 & 0b00010 != 0 { '>' } else { '-' },
       if self.0 & 0b00001 != 0 { '>' } else { '-' },
     )
+  }
+}
+
+#[test]
+fn contrapositive() {
+  for a in (0..32).map(Arrow) {
+    for b in (0..32).map(Arrow) {
+      if let Some(c) = a.join(b) {
+        assert!(
+          b.join(Arrow(c.0 ^ 31).converse().unwrap())
+            .unwrap_or(Arrow(31))
+            .converse()
+            .unwrap()
+            .merge(a)
+            == Arrow(0),
+          "{a:?} {b:?} {c:?}"
+        );
+      }
+    }
   }
 }

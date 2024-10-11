@@ -1,0 +1,43 @@
+
+agent A(*)
+agent B(*)
+agent C(*)
+agent D(*)
+
+agent Cons(*, *, *)
+agent Nil(*)
+agent Append(*, *, *)
+
+rule Cons(_, x, a) Append(_, v, b) {
+  Append(a, v, t)
+  Cons(b, x, t)
+}
+
+rule Nil(_) Append(_, v, v) {}
+
+agent Diff(*, {*, *})
+agent DiffAppend(*, *, *)
+agent Open(*, *, *)
+
+rule Diff(_, x, y) DiffAppend(_, a, b) {
+  Open(a, t, y)
+  Diff(b, x, t)
+}
+
+rule Diff(_, x, y) Open(_, y, x) {}
+
+net abcd(r) {
+  Open(abcd, n, r)
+  Nil(n)
+  DiffAppend(ab, cd, abcd)
+  Diff(ab, ab2, ab0)
+  Cons(ab2, a, ab1)
+  Cons(ab1, b, ab0)
+  Diff(cd, cd2, cd0)
+  Cons(cd2, c, cd1)
+  Cons(cd1, d, cd0)
+  A(a)
+  B(b)
+  C(c)
+  D(d)
+}
